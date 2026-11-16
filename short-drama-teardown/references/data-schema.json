@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "short-drama-teardown/data-schema.json",
+  "title": "扒剧 HTML 报告数据契约（export_html.py V4.0.1 唯一权威口径）",
+  "description": "生成离线单页 HTML 报告前，必须把四份成果汇总成这一份 JSON。字段名一字不能改：脚本按字段名直取，写错不会报错，只会渲染出空白模块。不确定就先跑 python scripts/export_html.py --write-example 拿一份可用的样例 JSON，改内容不改变量名。",
+  "type": "object",
+  "required": ["meta", "characters", "transcript", "script_scenes", "skeleton"],
+  "additionalProperties": true,
+  "properties": {
+    "meta": {
+      "type": "object",
+      "description": "报告头部信息",
+      "required": ["title", "episode"],
+      "properties": {
+        "title": { "type": "string", "description": "剧名；缺省显示「未命名短剧」" },
+        "episode": { "type": "string", "description": "集号，如 EP01；缺省 EP01" },
+        "channel": { "type": "string", "description": "进场通道，建议写「通道 A（发链接）」或「通道 B（直接发视频 · 裸片强视觉锚定模式）」" },
+        "duration": { "type": "string", "description": "本集总时长，如 01:32" },
+        "date": { "type": "string", "description": "扒稿日期，如 2026-11-16" }
+      }
+    },
+    "characters": {
+      "type": "array",
+      "description": "《全集唯一出场人物视觉与称谓锁定表》，对应 references/teardown-script-template.md 的 A 表",
+      "items": {
+        "type": "object",
+        "required": ["name", "appearance", "variants", "evidence", "voice"],
+        "properties": {
+          "name": { "type": "string", "description": "唯一标准角色名，全篇强制统一（如 涂山瑶（涂山老祖宗））" },
+          "appearance": { "type": "string", "description": "外貌与服装基线" },
+          "variants": { "type": "string", "description": "同人形态归并项（瞳色/本体/战损），说明是同一个人，禁止拆成新角色" },
+          "evidence": { "type": "string", "description": "台词内被称呼证据 + 时间码（反向锁名依据）" },
+          "voice": { "type": "string", "description": "声线特征" }
+        }
+      }
+    },
+    "transcript": {
+      "type": "array",
+      "description": "《L1+L2 逐句 1:1 画面绑定逐字稿》，一句一行，顺序即句号",
+      "items": {
+        "type": "object",
+        "required": ["index", "timecode", "text", "speaker", "frame_note"],
+        "properties": {
+          "index": { "type": ["integer", "string"], "description": "句号，从 1 开始" },
+          "timecode": { "type": "string", "description": "起止时间码，如 00:03.000-00:06.000" },
+          "text": { "type": "string", "description": "台词（正字校对后）" },
+          "speaker": { "type": "string", "description": "唯一说话人 + 属性，如「褐衣长发男（现场对白）」「涂山瑶（OS）」；OS/VO 字样会触发紫色高亮与统计" },
+          "frame_note": { "type": "string", "description": "该秒画面实录与嘴型核验（1 句 1 画面铁证）" }
+        }
+      }
+    },
+    "script_scenes": {
+      "type": "array",
+      "description": "《深度还原剧本》，按场组织，对应 references/script-restoration-template.md",
+      "items": {
+        "type": "object",
+        "required": ["header", "blocks"],
+        "properties": {
+          "header": { "type": "string", "description": "场头，如 第 1 场 · 古树林（日 · 外 · 00:00-00:15）" },
+          "blocks": {
+            "type": "array",
+            "description": "场内按顺序排列的动作行与台词行",
+            "items": {
+              "type": "object",
+              "required": ["type"],
+              "properties": {
+                "type": { "type": "string", "enum": ["action", "dialogue"], "description": "action=△动作调度行；dialogue=台词行" },
+                "text": { "type": "string", "description": "动作正文（action 必填）或台词正文（dialogue 必填）" },
+                "speaker": { "type": "string", "description": "dialogue 必填。含「（OS）」=内心独白，「（画外）」=画外音，「（VO）」=旁白；渲染时自动变色" },
+                "direction": { "type": "string", "description": "dialogue 可选。神态/动作提示，渲染为括号小字" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "skeleton": {
+      "type": "object",
+      "description": "《骨架分析卡》，对应 references/skeleton-card-template.md",
+      "properties": {
+        "formula": { "type": "string", "description": "结构公式一段话（模板第五节）" },
+        "beats": {
+          "type": "array",
+          "description": "分集节拍表 / 集内节拍表",
+          "items": {
+            "type": "object",
+            "required": ["unit", "hook", "escalation", "twist", "cliffhanger", "intensity"],
+            "properties": {
+              "unit": { "type": "string", "description": "集号或段号，如 EP01" },
+              "hook": { "type": "string", "description": "钩子（秒位+手段）" },
+              "escalation": { "type": "string", "description": "升级/冲突加码" },
+              "twist": { "type": "string", "description": "反转或爽点（含 OS 亮底牌）" },
+              "cliffhanger": { "type": "string", "description": "断章钩（秒位+手段）" },
+              "intensity": { "type": "string", "description": "强度，如 4/5" }
+            }
+          }
+        },
+        "hooks": {
+          "type": "array",
+          "description": "钩子与画外音爽点盘点",
+          "items": {
+            "type": "object",
+            "required": ["type", "method", "evidence"],
+            "properties": {
+              "type": { "type": "string", "description": "如 前 3 秒钩 / OS 信息差钩 / 中段钩 / 断章钩" },
+              "method": { "type": "string", "description": "手段" },
+              "evidence": { "type": "string", "description": "原样记录（引逐字稿原句）" }
+            }
+          }
+        },
+        "transferable": { "type": "array", "items": { "type": "string" }, "description": "可迁移（结构与节奏套路）" },
+        "non_transferable": { "type": "array", "items": { "type": "string" }, "description": "不可迁移（具体表达）" }
+      }
+    }
+  },
+  "x-notes": [
+    "1. 先跑 python scripts/export_html.py --write-example 拿到可用的 example_data.json，再往里填内容——比从零手写安全。",
+    "2. 出稿前脚本会做字段体检：blocking 级直接拒绝出稿（exit 4），warning 级逐条打印，不会静默产出空白报告。",
+    "3. 报告默认浅色主题；要深色加 --theme dark。打印/转 PDF 时样式会强制浅色，不存在黑底黑字。",
+    "4. 交付首行版权声明由脚本自动写入，不要删。"
+  ]
+}

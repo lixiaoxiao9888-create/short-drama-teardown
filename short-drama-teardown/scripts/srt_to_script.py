@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-srt_to_script.py — 扒剧引擎 V3.0 L1 字幕层转换与预审工具
+srt_to_script.py — 扒剧引擎 V4.0.1 L1 字幕层转换与预审工具
 功能升级（针对客户三大反馈：漏字幕、画外音难辨、同音错别字）：
   1. 多源解析：支持 .srt / .vtt / .bcc / 剪映草稿 JSON (draft_content.json / draft_info.json) 批量直读
   2. 防吞句智能合并：默认 --merge 0（逐句保留，不再盲目把 3 秒内多句快节奏对白吞并成一句）；
-     若开启 --merge N，仅当间隔 <= N 秒且前句无句末终止标点、无换人特征时才安全拼接
+     若开启 --merge N，仅当「间隔 <= N 秒 + 前句末尾是逗号/顿号/破折号等续句标点 + 后句不以换人线索开头
+     + 单次合并链不超过 2 句」时才拼接；否则一律不合并并留痕
   3. 滚动重影去重：自动清理自动字幕（Auto-subs / OCR）常见的相邻行首尾重复字词
   4. 防漏字断层预警（--gap-warn）：自动扫描相邻台词间 > N 秒（默认 3.5s）的空白断层，
      插入〔⚠️ 疑似漏字幕/纯动作段〕锚点，提示定点复核
@@ -21,6 +22,23 @@ import os
 import re
 import sys
 
+# V4.0.1 补丁：统一用 utf-8-sig 读入，兼容 Windows 记事本 / PowerShell Set-Content / EXCEL 导出的
+# UTF-8 BOM。BOM 残留会让首行时间轴判不出数字，json.loads 则直接抛 Unexpected UTF-8 BOM。
+BOM_SAFE_ENCODING = 'utf-8-sig'
+
+
+def read_text(path, errors='replace'):
+    """BOM 安全读文本（utf-8-sig 对无 BOM 文件同样正确）。"""
+    with io.open(path, encoding=BOM_SAFE_ENCODING, errors=errors) as fh:
+        return fh.read()
+
+
+def load_json_file(path):
+    """BOM 安全读 JSON：BOM 未剥离时 json.loads 会报 Unexpected UTF-8 BOM。"""
+    with io.open(path, encoding=BOM_SAFE_ENCODING) as fh:
+        return json.loads(fh.read())
+
+
 # 画外音（OS/VO）与特征词规则库
 OS_PATTERNS = [
     (re.compile(r'(叮[！!]|宿主|系统绑定|任务开启|好感度|奖励发放|新手大礼包|属性面板)'), '〔系统音（OS）〕'),
@@ -30,12 +48,29 @@ OS_PATTERNS = [
 ]
 
 SENTENCE_END_PUNCT = set('。！？!?…~”"）)】]')
+CONTINUATION_PUNCT = set('，,、—－-…:：')
+
+# 换人/新句特征：后句若以此类词开头，视为新说话人或新语义单元，禁止并入上句
+NEW_UNIT_CUES = (
+    '你', '我', '他', '她', '它', '咱', '您', '喂', '嗯', '啊', '哎', '诶', '唉',
+    '不', '别', '滚', '走', '来', '去', '谁', '什么', '怎么', '为什么', '住口', '闭嘴',
+)
+# 画外音/新信息块特征：命中即不允许被并入上一句
+NEW_BLOCK_PAT = re.compile(
+    r'(心想|暗道|暗忖|叮[！!]|宿主|系统绑定|任务开启|好感度|奖励发放|殊不知|三年前|五年前|十年前)'
+)
+MAX_MERGE_CHAIN = 2      # 单次合并链最长 2 句（防三句以上连锁吞并）
+MAX_FRAGMENT_LEN = 12    # 只有 ≤12 字的碎片句才允许并入上句
 
 
 def fmt(t):
+    """秒 -> mm:ss.mmm。先整体转毫秒再拆分，避免 round(0.9996*1000)=1000 造成的进位丢失（V4.0.1 修）"""
     if t < 0:
         t = 0.0
-    return f"{int(t)//60:02d}:{int(t)%60:02d}.{int(round((t - int(t))*1000))%1000:03d}"
+    total_ms = int(round(t * 1000))
+    total_s, ms = divmod(total_ms, 1000)
+    minutes, sec = divmod(total_s, 60)
+    return f"{minutes:02d}:{sec:02d}.{ms:03d}"
 
 
 def clean_tags(text):
@@ -157,29 +192,47 @@ def dedup_rolling(items):
 
 def merge(items, gap):
     """
-    安全合并：
-    - gap <= 0 时（默认）：绝不合并，保持逐句独立，防止把快节奏对话和画外音吞并成一句
-    - gap > 0 时：仅当两句间隔 <= gap 且前句末尾没有句末标点、不含空行标记时，用逗号/空格拼接
+    安全合并（V4.0.1 重写）：
+    - gap <= 0 时（默认）：绝不合并，保持逐句独立，防止把快节奏对话和画外音吞并成一句。
+    - gap > 0 时，必须同时满足以下全部条件才拼接，否则一律独立并留痕：
+        ① 与上句间隔 <= gap
+        ② 上句去掉首尾空白后，末尾不是句末终止标点（。！？…】
+        ③ 上句末尾是续句标点（，、—等），或本句是 <=12 字的碎片句
+        ④ 本句不以换人/新句特征词开头
+        ⑤ 本句不含 OS/系统/旁白类新信息块特征（心想/暗道/叮！/宿主…）
+        ⑥ 单次合并链不超过 2 句
+    返回 (items, merge_marks)，merge_marks 为被并掉的句子起点秒数集合，供输出留痕。
     """
     if gap <= 0:
         return [(s, e, c) for s, e, c in items], []
-    out, marks = [], []
+
+    out = []          # [[start, end, text, chain_len]]
+    marks = []        # 被合并掉的句子起点
     for s, e, c in items:
+        if not out:
+            out.append([s, e, c, 1])
+            continue
+        ps, pe, pc, chain = out[-1]
+        merged = False
         if (
-            out
-            and (s - out[-1][1] <= gap)
-            and out[-1][2] != '〔空〕'
+            (s - pe) <= gap
+            and pc != '〔空〕'
             and c != '〔空〕'
-            and out[-1][2][-1] not in SENTENCE_END_PUNCT
+            and chain < MAX_MERGE_CHAIN
+            and pc.rstrip()[-1:] not in SENTENCE_END_PUNCT
         ):
-            ps, pe, pc = out[-1]
-            sep = '' if pc.endswith(('，', ',', '、', '—', '-')) else '，'
-            out[-1] = (ps, e, pc + sep + c)
-            marks.append((ps, e))
-        else:
-            out.append([s, e, c])
-    out = [tuple(x) for x in out]
-    return out, marks
+            tail_is_continuation = pc.rstrip()[-1:] in CONTINUATION_PUNCT
+            is_fragment = len(c) <= MAX_FRAGMENT_LEN
+            starts_new_unit = c.lstrip().startswith(NEW_UNIT_CUES)
+            is_new_block = bool(NEW_BLOCK_PAT.search(c))
+            if (tail_is_continuation or is_fragment) and not starts_new_unit and not is_new_block:
+                sep = '' if pc.rstrip()[-1:] in CONTINUATION_PUNCT else '，'
+                out[-1] = [ps, e, pc + sep + c, chain + 1]
+                marks.append(ps)   # 记录「吸收方」起点，供输出行留痕
+                merged = True
+        if not merged:
+            out.append([s, e, c, 1])
+    return [(s, e, c) for s, e, c, _ in out], marks
 
 
 def parse_glossary(glossary_str):
@@ -231,8 +284,18 @@ def detect_clue(text, prev_text='', next_text=''):
     return ' · '.join(clues) if clues else '待核（对白/OS）'
 
 
-def to_md(items, src, gap_warn=3.5, glossary=None):
+def is_voiceover_label(clue):
+    """只有被 〔〕 包住的才是真判定的 OS/VO/系统/通讯标签；
+    默认兜底串「待核（对白/OS）」不算，避免把未判定的句子统计成画外音（V4.0.1 修）"""
+    if not clue or clue.startswith('〔空'):
+        return False
+    return clue.startswith('〔')
+
+
+def to_md(items, src, gap_warn=3.5, glossary=None, merge_marks=None):
     glossary = glossary or {}
+    merge_marks = merge_marks or []
+    merged_rows = set(round(x, 3) for x in merge_marks)
     rows = [
         '| 句号 | 时间码 | 台词（正字校对后） | 说话人/画外音(OS·VO)初标 | 校对与防漏备注 |',
         '|---|---|---|---|---|',
@@ -240,6 +303,7 @@ def to_md(items, src, gap_warn=3.5, glossary=None):
     total_fixes = 0
     gap_warnings = 0
     os_count = 0
+    merge_count = len(merge_marks)
 
     # 检查片头是否有长空白
     if items and gap_warn > 0 and items[0][0] >= gap_warn:
@@ -267,13 +331,15 @@ def to_md(items, src, gap_warn=3.5, glossary=None):
         if fix_notes:
             total_fixes += len(fix_notes)
         clue = detect_clue(fixed_c, prev_c, next_c)
-        if 'OS' in clue or 'VO' in clue or '通讯' in clue:
+        if is_voiceover_label(clue):
             os_count += 1
 
         dur = max(0.0, e - s)
         notes = []
         if fix_notes:
             notes.extend(fix_notes)
+        if round(s, 3) in merged_rows:
+            notes.append('⤵ 已按 --merge 规则吸收后碎句（碎句还原）')
         if dur > 0 and dur < 0.6 and fixed_c != '〔空〕':
             notes.append(f"闪句({dur:.2f}s)")
         note_str = '；'.join(notes) if notes else '—'
@@ -281,10 +347,11 @@ def to_md(items, src, gap_warn=3.5, glossary=None):
         rows.append(f"| {idx+1} | {fmt(s)}-{fmt(e)} | {fixed_c} | {clue} | {note_str} |")
 
     summary = (
-        f"## L1 字幕层逐字稿（V3.0 防漏字·画外音初标版）\n\n"
+        f"## L1 字幕层逐字稿（V4.0.1 防漏字·画外音初标版）\n\n"
         f"> 来源：`{src}` · 共 **{len(items)}** 句台词 · "
         f"画外音/系统音初标 **{os_count}** 处 · "
         f"时间断层预警 **{gap_warnings}** 处 · "
+        f"碎句合并 **{merge_count}** 处 · "
         f"同音正字纠偏 **{total_fixes}** 处\n\n"
     )
     return summary + '\n'.join(rows) + '\n'
@@ -316,6 +383,17 @@ def selftest():
     assert '〔疑似OS·内心独白〕' in md
     assert '〔系统音（OS）〕' in md
     assert '〔时间断层 4.5s〕' in md
+    # V4.0.1 补丁回归：UTF-8 BOM 输入不得吞掉首句（Windows 记事本 / PowerShell 写出最常见）
+    import tempfile
+    bom_path = os.path.join(tempfile.gettempdir(), 's2s_bom_selftest.srt')
+    with io.open(bom_path, 'w', encoding='utf-8-sig') as fh:
+        fh.write(demo)
+    try:
+        bom_items = parse_input(read_text(bom_path), bom_path)
+        assert len(bom_items) == 3, bom_items
+        assert bom_items[0][2] == '咋整啊', bom_items[0]
+    finally:
+        os.remove(bom_path)
 
     # 测试剪映 JSON 解析
     jy_demo = json.dumps({
@@ -337,43 +415,86 @@ def selftest():
     })
     jy_items = parse_input(jy_demo, 'draft_content.json')
     assert len(jy_items) == 2 and jy_items[0][2] == '第一句台词'
+
+    # —— V4.0.1 回归断言 ——
+    # ① 毫秒进位不再丢失（剪映微秒除 1e6 高频出现 .9996）
+    assert fmt(59.9996) == '01:00.000', fmt(59.9996)
+    assert fmt(61.9999) == '01:02.000', fmt(61.9999)
+    assert fmt(0.9997) == '00:01.000', fmt(0.9997)
+    assert fmt(3599.9996) == '60:00.000', fmt(3599.9996)
+    # ② 兜底串「待核（对白/OS）」不得被统计成画外音
+    assert is_voiceover_label('〔疑似OS·内心独白〕') is True
+    assert is_voiceover_label('待核（对白/OS）') is False
+    assert is_voiceover_label('〔空字幕〕') is False
+    # ③ --merge 不得把 OS/长句/换人句连锁吞并
+    chain = [
+        (1.0, 2.0, '你个'),
+        (2.1, 2.6, '老狐狸'),
+        (2.7, 3.0, '付寒周心想：这一世我绝不放过你'),
+    ]
+    merged, marks = merge(chain, 1.0)
+    assert len(merged) == 2, [m[2] for m in merged]      # 前两句合并，第三句必须独立
+    assert merged[0][2] == '你个，老狐狸'
+    assert '付寒周' in merged[1][2]
+    # 单次合并链上限 2 句
+    chain3 = [(1.0, 1.4, '甲'), (1.5, 1.9, '乙'), (2.0, 2.4, '丙')]
+    merged3, _ = merge(chain3, 1.0)
+    assert len(merged3) == 2, [m[2] for m in merged3]
+    # ④ 碎裂合并必须留痕
+    md3 = to_md(merged, 'selftest', gap_warn=9, merge_marks=marks)
+    assert '碎句合并 **1** 处' in md3, md3
+    assert '⤵ 已按 --merge 规则吸收后碎句' in md3
     print('selftest OK')
+
+
+VALUE_OPTS = ('--merge', '--out', '--gap-warn', '--glossary')
+
+
+def split_argv(argv):
+    """稳健参数解析：选项与其取值成对消费，位置参数不受选项顺序影响（V4.0.1 重写）"""
+    positional, opts = [], {}
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a in VALUE_OPTS:
+            opts[a] = argv[i + 1] if i + 1 < len(argv) else ''
+            i += 2
+        elif a.startswith('--'):
+            opts[a] = True
+            i += 1
+        else:
+            positional.append(a)
+            i += 1
+    return positional, opts
 
 
 if __name__ == '__main__':
     if '--selftest' in sys.argv:
         selftest()
         sys.exit(0)
-    args = [
-        a for i, a in enumerate(sys.argv[1:])
-        if not a.startswith('--') and (i == 0 or sys.argv[i] not in ('--merge', '--out', '--gap-warn', '--glossary'))
-    ]
-    gap = 0.0  # V3.0 默认 0（不盲目吞并句子）
-    if '--merge' in sys.argv:
-        gap = float(sys.argv[sys.argv.index('--merge') + 1])
-    gap_warn = 3.5
-    if '--gap-warn' in sys.argv:
-        gap_warn = float(sys.argv[sys.argv.index('--gap-warn') + 1])
-    glossary_str = ''
-    if '--glossary' in sys.argv:
-        glossary_str = sys.argv[sys.argv.index('--glossary') + 1]
+    args, opts = split_argv(sys.argv[1:])
+    gap = float(opts.get('--merge', 0.0))   # 默认 0（不盲目吞并句子）
+    gap_warn = float(opts.get('--gap-warn', 3.5))
+    glossary_str = opts.get('--glossary', '') or ''
 
     if not args:
         print(__doc__)
         sys.exit(2)
     src = args[0]
-    text = io.open(src, encoding='utf-8', errors='replace').read()
+    text = read_text(src)
     items = parse_input(text, src)
     if not items:
         print('未解析到字幕时间轴——确认这是 SRT/VTT/BCC 或剪映草稿 JSON 格式')
         sys.exit(1)
     items = dedup_rolling(items)
-    items, _ = merge(items, gap)
+    items, merge_marks = merge(items, gap)
     glossary = parse_glossary(glossary_str)
-    md = to_md(items, os.path.basename(src), gap_warn=gap_warn, glossary=glossary)
-    if '--out' in sys.argv:
-        outp = sys.argv[sys.argv.index('--out') + 1]
-        io.open(outp, 'w', encoding='utf-8').write(md)
-        print(f'已写出 {outp}（共 {len(items)} 句）')
+    md = to_md(items, os.path.basename(src), gap_warn=gap_warn,
+               glossary=glossary, merge_marks=merge_marks)
+    outp = opts.get('--out')
+    if outp:
+        with io.open(outp, 'w', encoding='utf-8') as fh:
+            fh.write(md)
+        print(f'已写出 {outp}（共 {len(items)} 句，碎句合并 {len(merge_marks)} 处）')
     else:
         print(md)
