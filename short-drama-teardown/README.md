@@ -7,7 +7,7 @@
 1. 《扒剧逐字稿》——逐句时间码 + 1:1 绑定画面 + 说话人/OS 属性
 2. 《深度还原剧本》——标准影视级剧本（场号 / △动作调度 / 对白 / OS-VO）
 3. 《骨架分析卡》——节拍表 / 卡点矩阵 / 钩子盘点 / 可迁移 vs 不可迁移
-4. 《离线单页 HTML 报告 + CSV》——单文件、零依赖、可打印可转 PDF
+4. 《离线单页 HTML 报告 + CSV》——单文件、零依赖、可打印可转 PDF（V4.0.1 界面精修：渐变 Hero、悬浮胶囊目录 + 阅读进度、章节编号徽标、人物头像列、OS 徽章、Toast 反馈、回到顶部）
 
 > 产物仅供拆解学习与结构研究；台词含原作内容，**不可照搬商用**。
 
@@ -69,3 +69,12 @@ python scripts/export_html.py data.json --out 侯门嫁状元_EP03_剧本还原�
 ## 五、版本口径
 
 包内所有文件的版本串统一为 **V4.0.1**。若在文件里看到 V3.x / V4.0 字样，那是历史变更描述（`CHANGELOG.md` 里的记录），不是现行口径。
+
+## English (short)
+
+**short-drama-teardown V4.0.1** turns a finished short-drama episode into four assets: a per-line transcript bound 1:1 to video frames, a production screenplay, a skeleton card, and an offline single-page HTML report.
+
+Quick start: run the three `--selftest` scripts, convert subtitles with `srt_to_script.py`, bind frames with `batch_prep.py --bind-frames`, then render the report with `export_html.py data.json --out report.html` (use `--write-example` to get a canonical JSON). Field contract: `references/data-schema.json`.
+
+The three identity locks (same-person merge, address-term naming, per-line frame binding) require a **vision-capable model** — see the vision gate in `SKILL.md` §一·0.
+

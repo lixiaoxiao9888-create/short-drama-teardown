@@ -1,6 +1,6 @@
 ---
 name: short-drama-teardown
-description: 【短剧扒剧本 · 深度还原 Skill（Short-Drama Script Teardown V4.0.1）】把爆款短剧从成片视频逆向深度还原为：唯一人物视觉与称谓锁定表、标准影视级还原剧本（含△动作调度、神态微表情与OS/VO标注）、骨架分析卡与逐句1:1绑定逐字稿，并支持一键封装为 100% 离线单页滚动 HTML 剧本还原报告（无需分页，开卷即读、支持一键复制整集剧本与导出 CSV、打印/转PDF强制浅色）。内置「进场双通道门禁锁（发链接 vs 直接发视频）」+「裸视频防乱人三把铁锁（同人归并/称谓锁名/逐句1:1绑画面）」+「防漏字双轨提取」+「画外音(OS/VO)四维推导」+「抽帧失败强制报警」+「JSON 字段体检」。⚠️ 本包只做还原与拆解，不承接「只给剧名帮你找剧」的源检索。触发词：扒剧、扒剧本、短剧剧本还原、拆解爆款、拉片、逐字稿、还原剧本、骨架分析、生成拉片HTML、剧本还原报告。
+description: 【短剧扒剧本 · 深度还原 Skill（Short-Drama Script Teardown V4.0.1）】把爆款短剧从成片视频逆向深度还原为：唯一人物视觉与称谓锁定表、标准影视级还原剧本（含△动作调度、神态微表情与OS/VO标注）、骨架分析卡与逐句1:1绑定逐字稿，并支持一键封装为 100% 离线单页滚动 HTML 剧本还原报告（无需分页，开卷即读、支持一键复制整集剧本与导出 CSV、打印/转PDF强制浅色）。内置「进场双通道门禁锁（发链接 vs 直接发视频）」+「裸视频防乱人三把铁锁（同人归并/称谓锁名/逐句1:1绑画面）」+「防漏字双轨提取」+「画外音(OS/VO)四维推导」+「抽帧失败强制报警」+「JSON 字段体检」。⚠️ 本包只做还原与拆解，不承接「只给剧名帮你找剧」的源检索。触发词：扒剧、扒剧本、短剧剧本还原、拆解爆款、拉片、逐字稿、还原剧本、骨架分析、生成拉片HTML、剧本还原报告。English triggers: short-drama teardown, script teardown, video to transcript, restore screenplay, frame-by-frame binding, skeleton card, teardown report.
 version: 4.0.1
 file_names:
     - SKILL.md

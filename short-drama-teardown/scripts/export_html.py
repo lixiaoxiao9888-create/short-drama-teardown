@@ -35,158 +35,433 @@ def load_json_file(path):
         return json.loads(fh.read())
 
 
-HTML_TEMPLATE = r"""<!DOCTYPE html>
+HTML_TEMPLATE = r"""
+<!DOCTYPE html>
 <html lang="zh-CN" data-theme="__DEFAULT_THEME__">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="generator" content="short-drama-teardown · export_html.py V4.0.1" />
+<meta name="color-scheme" content="light dark" />
 <title>__PAGE_TITLE__</title>
 <style>
+  /* ============ 设计令牌 ============ */
   :root {
-    --bg: #0d1117;
-    --surface: #161b22;
-    --surface-2: #1f2630;
-    --border: #30363d;
-    --text: #e6edf3;
-    --text-muted: #8b949e;
-    --accent: #58a6ff;
-    --accent-soft: rgba(88, 166, 255, 0.14);
-    --green: #3fb950;
-    --amber: #d29922;
-    --purple: #bc8cff;
-    --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-    --radius: 10px;
+    --bg: #0a0e14;
+    --bg-2: #0d1320;
+    --surface: #121a26;
+    --surface-2: #182433;
+    --surface-3: #1e2c3d;
+    --border: #24334a;
+    --border-soft: #1c2740;
+    --text: #e9eef7;
+    --text-muted: #93a2b8;
+    --accent: #8b8cff;
+    --accent-2: #38bdf8;
+    --accent-soft: rgba(139, 140, 255, 0.16);
+    --green: #34d399;
+    --amber: #fbbf24;
+    --purple: #c084fc;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 18px 44px -20px rgba(0, 0, 0, 0.75);
+    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.25);
+    --radius: 18px;
+    --radius-sm: 12px;
+    --radius-xs: 8px;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
   }
   [data-theme="light"] {
-    --bg: #f6f8fa;
+    --bg: #f3f5f9;
+    --bg-2: #eceff5;
     --surface: #ffffff;
-    --surface-2: #f0f3f6;
-    --border: #d0d7de;
-    --text: #1f2328;
-    --text-muted: #656d76;
-    --accent: #0969da;
-    --accent-soft: rgba(9, 105, 218, 0.1);
-    --green: #1a7f37;
-    --amber: #9a6700;
-    --purple: #8250df;
-    --shadow: 0 4px 16px rgba(31, 35, 40, 0.08);
+    --surface-2: #f6f8fb;
+    --surface-3: #eef2f7;
+    --border: #e2e8f0;
+    --border-soft: #edf1f6;
+    --text: #0f1724;
+    --text-muted: #5d6b7e;
+    --accent: #4f46e5;
+    --accent-2: #0ea5e9;
+    --accent-soft: rgba(79, 70, 229, 0.10);
+    --green: #0b8a5b;
+    --amber: #a25a06;
+    --purple: #7c3aed;
+    --shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 18px 40px -22px rgba(16, 24, 40, 0.28);
+    --shadow-soft: 0 1px 2px rgba(16, 24, 40, 0.05);
   }
+
   * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
   body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-    background: var(--bg);
+    font-family: var(--sans);
+    background:
+      radial-gradient(1100px 520px at 12% -8%, var(--accent-soft), transparent 62%),
+      radial-gradient(900px 460px at 92% -4%, rgba(56, 189, 248, 0.10), transparent 58%),
+      var(--bg);
+    background-attachment: fixed;
     color: var(--text);
-    line-height: 1.65;
+    line-height: 1.72;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "palt" 1;
   }
-  .container { max-width: 1200px; margin: 0 auto; padding: 20px 24px 80px; }
-  .header {
+  ::selection { background: var(--accent-soft); color: var(--text); }
+
+  .container { max-width: 1180px; margin: 0 auto; padding: 28px 22px 96px; }
+
+  /* ============ 顶部主视觉 ============ */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(160deg, var(--surface) 0%, var(--surface-2) 100%);
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) + 4px);
+    box-shadow: var(--shadow);
+    padding: 30px 32px 26px;
+    margin-bottom: 18px;
+  }
+  .hero::before {
+    content: "";
+    position: absolute; inset: -40% 55% 40% -10%;
+    background: radial-gradient(closest-side, var(--accent-soft), transparent 72%);
+    pointer-events: none;
+  }
+  .hero::after {
+    content: "";
+    position: absolute; right: -6%; top: -55%;
+    width: 340px; height: 340px; border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(56, 189, 248, 0.14), transparent 70%);
+    pointer-events: none;
+  }
+  .hero-main { position: relative; display: flex; flex-wrap: wrap; gap: 22px; justify-content: space-between; align-items: flex-start; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 10px;
+  }
+  .eyebrow::before { content: ""; width: 22px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+  .title-wrap h1 {
+    margin: 0 0 6px;
+    font-size: clamp(22px, 2.5vw, 31px);
+    line-height: 1.24;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .subtitle { margin: 0 0 14px; color: var(--text-muted); font-size: 13.5px; }
+
+  .meta-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .meta-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 11px; border-radius: 999px;
+    background: var(--surface-3); border: 1px solid var(--border-soft);
+    font-size: 12.5px; color: var(--text-muted); white-space: nowrap;
+  }
+  .meta-chip b { color: var(--text); font-weight: 700; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 11px; border-radius: 999px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.01em;
+    background: var(--accent-soft); color: var(--accent);
+    border: 1px solid transparent;
+  }
+  .badge.warn { background: rgba(251, 191, 36, 0.14); color: var(--amber); }
+  .badge.ok { background: rgba(52, 211, 153, 0.14); color: var(--green); }
+  .badge.os { background: rgba(192, 132, 252, 0.16); color: var(--purple); }
+
+  .header-actions { display: flex; gap: 9px; flex-wrap: wrap; position: relative; }
+  .btn {
+    cursor: pointer; border: 1px solid var(--border);
+    background: var(--surface-3); color: var(--text);
+    padding: 9px 15px; border-radius: 11px;
+    font-size: 13px; font-weight: 600; font-family: inherit;
+    transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .btn:hover { border-color: var(--accent); background: var(--surface); box-shadow: var(--shadow-soft); transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn.primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff; border-color: transparent;
+    box-shadow: 0 10px 24px -14px var(--accent);
+  }
+  .btn.primary:hover { color: #fff; filter: brightness(1.06); }
+  .btn.copied { background: var(--green); color: #04231a; border-color: transparent; }
+
+  .copyright-note {
+    position: relative;
+    margin-top: 18px; padding-top: 14px;
+    border-top: 1px dashed var(--border);
+    font-size: 12px; color: var(--amber); line-height: 1.6;
+  }
+
+  /* ============ 悬浮导航 ============ */
+  .nav-shell { position: sticky; top: 12px; z-index: 40; margin-bottom: 20px; }
+  .toc-bar {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    padding: 9px 12px;
+    background: var(--surface);
+    background: color-mix(in srgb, var(--surface) 84%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow-soft);
+    backdrop-filter: blur(12px) saturate(1.4);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  }
+  .toc-label { font-size: 11.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin: 0 6px 0 4px; }
+  .toc-link {
+    text-decoration: none; color: var(--text-muted);
+    padding: 7px 13px; border-radius: 999px;
+    font-size: 13px; font-weight: 600; white-space: nowrap;
+    border: 1px solid transparent;
+    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  }
+  .toc-link:hover { color: var(--text); background: var(--surface-3); }
+  .toc-link.active { color: var(--accent); background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 26%, transparent); }
+  .nav-progress {
+    height: 2px; margin: 6px 2px 0; border-radius: 2px; overflow: hidden;
+    background: transparent;
+  }
+  .nav-progress span {
+    display: block; height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    transition: width 0.1s linear;
+  }
+
+  /* ============ 卡片与章节 ============ */
+  .section-card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 20px 24px;
+    padding: 26px 28px;
+    margin-bottom: 22px;
     box-shadow: var(--shadow);
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 14px;
-  }
-  .title-wrap h1 { margin: 0 0 8px; font-size: 22px; font-weight: 700; }
-  .meta-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; color: var(--text-muted); }
-  .badge {
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
-    background: var(--accent-soft); color: var(--accent);
-  }
-  .badge.warn { background: rgba(210, 153, 34, 0.14); color: var(--amber); }
-  .badge.ok { background: rgba(63, 185, 80, 0.14); color: var(--green); }
-  .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-  .btn {
-    cursor: pointer; border: 1px solid var(--border); background: var(--surface-2);
-    color: var(--text); padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 500;
-    transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 6px;
-  }
-  .btn:hover { border-color: var(--accent); color: var(--accent); }
-  .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .btn.primary:hover { opacity: 0.9; color: #fff; }
-  .btn.copied { background: var(--green); color: #fff; border-color: var(--green); }
-
-  .toc-bar {
-    position: sticky; top: 0; z-index: 20;
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 10px 16px; margin-bottom: 18px; box-shadow: var(--shadow);
-    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
-  }
-  .toc-bar span { font-size: 12.5px; color: var(--text-muted); font-weight: 600; margin-right: 4px; }
-  .toc-link {
-    text-decoration: none; color: var(--text); background: var(--surface-2);
-    border: 1px solid var(--border); padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 500;
-  }
-  .toc-link:hover { border-color: var(--accent); color: var(--accent); }
-
-  .section-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 22px 24px; margin-bottom: 22px; box-shadow: var(--shadow);
-    scroll-margin-top: 66px;
+    scroll-margin-top: 96px;
   }
   .section-head {
-    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;
-    border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px;
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;
+    padding-bottom: 14px; margin-bottom: 18px;
+    border-bottom: 1px solid var(--border-soft);
   }
-  .section-head h2 { margin: 0; font-size: 18px; font-weight: 700; }
+  .section-title { display: flex; align-items: center; gap: 12px; }
+  .section-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent-soft), transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+    color: var(--accent); font-size: 13px; font-weight: 800; font-family: var(--mono);
+  }
+  .section-head h2 { margin: 0; font-size: 17.5px; font-weight: 750; letter-spacing: -0.01em; }
+  .section-desc { width: 100%; margin: -4px 0 0 42px; font-size: 12.5px; color: var(--text-muted); }
 
-  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
-  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-  th, td { padding: 11px 13px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
-  th { background: var(--surface-2); font-weight: 600; color: var(--text); white-space: nowrap; }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: rgba(88, 166, 255, 0.04); }
-  .timecode { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; white-space: nowrap; color: var(--text-muted); }
+  /* ============ 表格 ============ */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+  }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13.5px; }
+  thead th {
+    position: sticky; top: 0; z-index: 2;
+    background: var(--surface-2);
+    font-weight: 700; font-size: 12.5px; letter-spacing: 0.02em;
+    color: var(--text-muted);
+    padding: 12px 14px; text-align: left; white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody td { padding: 13px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border-soft); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr { transition: background 0.12s ease; }
+  tbody tr:nth-child(even) { background: color-mix(in srgb, var(--surface-2) 55%, transparent); }
+  tbody tr:hover { background: var(--accent-soft); }
+  .cell-name { font-weight: 750; white-space: nowrap; }
+  .timecode {
+    font-family: var(--mono); font-size: 12px;
+    white-space: nowrap; color: var(--text-muted);
+    letter-spacing: -0.02em;
+  }
+  .idx { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
 
-  .scene-block { margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px dashed var(--border); }
-  .scene-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-  .scene-title { font-size: 16px; font-weight: 700; color: var(--accent); margin-bottom: 10px; }
+  /* ============ 人物卡（表格首列头像） ============ */
+  .person { display: flex; align-items: center; gap: 10px; min-width: 150px; }
+  .avatar {
+    flex: 0 0 32px; width: 32px; height: 32px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-soft), transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+    color: var(--accent);
+  }
+
+  /* ============ 剧本 ============ */
+  .scene-block {
+    position: relative;
+    margin-bottom: 26px; padding: 20px 22px 18px 24px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+  }
+  .scene-block::before {
+    content: ""; position: absolute; left: 0; top: 16px; bottom: 16px; width: 3px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, var(--accent), var(--accent-2));
+  }
+  .scene-block:last-child { margin-bottom: 0; }
+  .scene-title {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px;
+    font-size: 14.5px; font-weight: 750; color: var(--accent);
+    margin-bottom: 14px; letter-spacing: 0.01em;
+  }
+  .scene-title .scene-tag {
+    font-family: var(--mono); font-size: 10.5px; font-weight: 700;
+    padding: 2px 7px; border-radius: 6px;
+    background: var(--accent-soft); color: var(--accent);
+  }
   .action-line {
-    background: var(--surface-2); border-left: 3px solid var(--amber);
-    padding: 9px 13px; border-radius: 0 6px 6px 0; margin: 10px 0; font-size: 13.5px;
+    display: flex; gap: 9px; align-items: flex-start;
+    background: var(--surface-3);
+    border-left: 3px solid var(--amber);
+    padding: 10px 14px; margin: 11px 0;
+    border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+    font-size: 13.5px; color: var(--text-muted);
   }
-  .dialogue-line { margin: 10px 0 10px 12px; font-size: 14.5px; }
-  .speaker { font-weight: 700; color: var(--green); }
+  .action-line .mark { color: var(--amber); font-weight: 800; flex: 0 0 auto; }
+  .dialogue-line {
+    margin: 12px 0 12px 2px; font-size: 15px; line-height: 1.75;
+    padding-left: 14px; border-left: 2px solid transparent;
+  }
+  .dialogue-line:hover { border-left-color: var(--border); }
+  .speaker {
+    font-weight: 750; color: var(--green);
+    margin-right: 2px;
+  }
   .speaker.os { color: var(--purple); }
-  .stage-dir { font-size: 13px; color: var(--text-muted); margin-left: 4px; }
-  .formula-box {
-    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-    padding: 14px 16px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13.5px;
-    white-space: pre-wrap; margin-bottom: 16px;
+  .os-tag {
+    display: inline-block; vertical-align: 1px;
+    font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+    padding: 1px 6px; border-radius: 5px; margin-left: 6px;
+    background: rgba(192, 132, 252, 0.16); color: var(--purple);
   }
-  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 16px; }
-  .sub-box { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
-  .sub-box h3 { margin: 0 0 10px; font-size: 15px; }
-  .copyright-note { font-size: 12px; color: var(--amber); margin-top: 6px; }
+  .stage-dir { font-size: 12.5px; color: var(--text-muted); margin-left: 4px; font-style: normal; }
+  .dialogue-text { color: var(--text); }
+
+  /* ============ 骨架卡 ============ */
+  .formula-box {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-sm);
+    padding: 16px 18px;
+    font-family: var(--mono); font-size: 13px; line-height: 1.8;
+    white-space: pre-wrap; margin-bottom: 18px;
+    color: var(--text);
+  }
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 18px; }
+  .sub-box {
+    background: var(--surface-2);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+    padding: 18px 20px;
+  }
+  .sub-box h3 {
+    margin: 0 0 12px; font-size: 14px; font-weight: 750;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .sub-box p { margin: 10px 0; font-size: 13.5px; }
+  .sub-box ul { margin: 8px 0 16px; padding-left: 20px; font-size: 13.5px; }
+  .sub-box li { margin: 5px 0; }
+  .hook-item {
+    padding: 10px 0; border-bottom: 1px dashed var(--border-soft);
+    font-size: 13.5px;
+  }
+  .hook-item:last-child { border-bottom: none; }
+  .hook-item .ev { display: block; margin-top: 4px; font-size: 12.5px; color: var(--text-muted); }
+
+  /* ============ 逐字稿 ============ */
+  .os-speaker { color: var(--purple); }
+  .frame-note { font-size: 12.5px; color: var(--text-muted); }
+
+  /* ============ 浮动控件 ============ */
+  .fab-top {
+    position: fixed; right: 26px; bottom: 26px; z-index: 50;
+    width: 44px; height: 44px; border-radius: 14px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text-muted); box-shadow: var(--shadow); cursor: pointer;
+    opacity: 0; transform: translateY(10px); pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease, color 0.15s ease;
+    font-size: 16px;
+  }
+  .fab-top.show { opacity: 1; transform: none; pointer-events: auto; }
+  .fab-top:hover { color: var(--accent); border-color: var(--accent); }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 28px; z-index: 60;
+    transform: translate(-50%, 14px);
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 10px 18px; font-size: 13px; font-weight: 600;
+    box-shadow: var(--shadow); opacity: 0; pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* ============ 响应式 ============ */
+  @media (max-width: 720px) {
+    .container { padding: 16px 12px 84px; }
+    .hero { padding: 22px 18px; }
+    .section-card { padding: 20px 16px; }
+    .section-desc { margin-left: 0; }
+    .toc-label { display: none; }
+    .toc-bar { gap: 6px; padding: 8px; }
+    .toc-link { padding: 6px 10px; font-size: 12px; }
+    .header-actions { width: 100%; }
+    .btn { flex: 1 1 auto; justify-content: center; }
+    .dialogue-line { font-size: 14px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { transition: none !important; animation: none !important; }
+  }
 
   @media print {
-    /* V4.0.1：打印/转 PDF 强制浅色全套变量，避免 dark 主题下「深底 + 继承#000」的黑底黑字 */
+    /* 打印/转 PDF 强制浅色全套变量，避免 dark 主题下「深底 + 继承#000」的黑底黑字 */
     :root, [data-theme="dark"], [data-theme="light"] {
       --bg: #ffffff;
       --surface: #ffffff;
       --surface-2: #f5f7f9;
+      --surface-3: #f5f7f9;
       --border: #c9d1d9;
+      --border-soft: #dde3ea;
       --text: #111111;
       --text-muted: #4a4a4a;
       --accent: #0b4f9e;
+      --accent-2: #0b4f9e;
       --accent-soft: rgba(11, 79, 158, 0.08);
       --green: #0f6b2d;
       --amber: #7a5200;
       --purple: #5b2fc0;
       --shadow: none;
+      --shadow-soft: none;
     }
-    .toc-bar, .header-actions, .btn { display: none !important; }
-    body { background: #fff; color: #111; }
-    .section-card, .header { box-shadow: none; border-color: #c9d1d9; break-inside: avoid; }
-    .table-wrap, table, th, td { border-color: #c9d1d9 !important; }
+    @page { margin: 14mm 12mm; }
+    body {
+      background: #fff !important; color: #111 !important;
+      background-image: none !important;
+    }
+    .nav-shell, .header-actions, .btn, .fab-top, .toast { display: none !important; }
+    .container { max-width: none; padding: 0; }
+    .hero { border: none; padding: 0 0 10px; margin-bottom: 12px; background: #fff !important; }
+    .hero::before, .hero::after { display: none !important; }
+    .section-card, .scene-block, .sub-box, .formula-box {
+      box-shadow: none !important; break-inside: avoid;
+    }
+    .section-card { border: 1px solid #c9d1d9; padding: 14px 16px; margin-bottom: 14px; }
+    .table-wrap { border-color: #c9d1d9 !important; overflow: visible !important; }
+    table, th, td { border-color: #c9d1d9 !important; }
+    thead th { position: static; background: #f5f7f9 !important; color: #111 !important; }
+    tbody tr, tbody tr:nth-child(even), tbody tr:hover { background: #fff !important; }
     th, tr, td { background: #fff !important; color: #111 !important; }
     tr:hover td { background: #fff !important; }
     .action-line { background: #f5f7f9 !important; color: #111 !important; border-left-color: #7a5200 !important; }
@@ -194,42 +469,65 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     .speaker { color: #0f6b2d !important; }
     .speaker.os { color: #5b2fc0 !important; }
     .scene-title { color: #0b4f9e !important; }
+    .scene-block::before { background: #0b4f9e !important; }
     .copyright-note { color: #7a5200 !important; }
+    .badge { border: 1px solid #c9d1d9 !important; background: #f5f7f9 !important; color: #111 !important; }
     a { color: #111 !important; text-decoration: none; }
   }
 </style>
 </head>
 <body>
 <div class="container">
-  <div class="header">
-    <div class="title-wrap">
-      <h1 id="drama-title"></h1>
-      <div class="meta-row" id="drama-meta"></div>
-      <div class="copyright-note">⚠️ 拆解学习用途 · 骨架与结构可迁移 · 原作台词与专有设定不可照搬商用 · 生成器 export_html.py V4.0.1</div>
-    </div>
-    <div class="header-actions">
-      <button class="btn" onclick="toggleTheme()">🌓 明暗切换</button>
-      <button class="btn" onclick="exportCSV()">📥 导出逐字稿 CSV</button>
-      <button class="btn primary" onclick="copyScript(this)">📋 一键复制整集剧本</button>
-    </div>
-  </div>
 
-  <nav class="toc-bar">
-    <span>快速定位：</span>
-    <a class="toc-link" href="#sec-chars">👤 一、唯一人物锁定</a>
-    <a class="toc-link" href="#sec-script">📜 二、深度还原剧本</a>
-    <a class="toc-link" href="#sec-skeleton">🧩 三、骨架分析卡</a>
-    <a class="toc-link" href="#sec-transcript">📝 四、逐句绑定逐字稿</a>
-  </nav>
+  <header class="hero">
+    <div class="hero-main">
+      <div class="title-wrap">
+        <div class="eyebrow">Script Teardown Report</div>
+        <h1 id="drama-title"></h1>
+        <p class="subtitle" id="drama-subtitle"></p>
+        <div class="meta-row" id="drama-meta"></div>
+      </div>
+      <div class="header-actions">
+        <button class="btn" type="button" onclick="toggleTheme()" title="切换明暗主题">🌓 明暗切换</button>
+        <button class="btn" type="button" onclick="exportCSV()" title="导出逐字稿 CSV">📥 导出 CSV</button>
+        <button class="btn primary" type="button" onclick="copyScript(this)" title="复制整集剧本">📋 复制整集剧本</button>
+      </div>
+    </div>
+    <div class="copyright-note">⚠️ 拆解学习用途 · 骨架与结构可迁移 · 原作台词与专有设定不可照搬商用 · 生成器 export_html.py V4.0.1</div>
+  </header>
+
+  <div class="nav-shell">
+    <nav class="toc-bar" aria-label="章节导航">
+      <span class="toc-label">快速定位</span>
+      <a class="toc-link" href="#sec-chars" data-target="sec-chars">👤 一、人物锁定</a>
+      <a class="toc-link" href="#sec-script" data-target="sec-script">📜 二、还原剧本</a>
+      <a class="toc-link" href="#sec-skeleton" data-target="sec-skeleton">🧩 三、骨架分析</a>
+      <a class="toc-link" href="#sec-transcript" data-target="sec-transcript">📝 四、逐字逐句</a>
+    </nav>
+    <div class="nav-progress"><span id="nav-progress-bar"></span></div>
+  </div>
 
   <!-- 一、唯一人物锁定表 -->
   <section id="sec-chars" class="section-card">
     <div class="section-head">
-      <h2>👤 一、《全集唯一出场人物视觉与称谓锁定表》</h2>
+      <div class="section-title">
+        <span class="section-num">01</span>
+        <h2>全集唯一出场人物视觉与称谓锁定表</h2>
+      </div>
+      <span class="badge ok" id="chars-count"></span>
+      <div class="section-desc">同一张脸换瞳色 / 显本体 / 战损，一律归并为同一角色；全篇只用唯一标准名。</div>
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>唯一标准角色名</th><th>外貌与服装基线</th><th>同人形态归并（禁拆新角）</th><th>台词称谓证据</th><th>声线特征</th></tr></thead>
+        <thead>
+          <tr>
+            <th>唯一标准角色名</th>
+            <th>外貌与服装基线</th>
+            <th>同人形态归并（禁拆新角）</th>
+            <th>台词称谓证据</th>
+            <th>声线特征</th>
+          </tr>
+        </thead>
         <tbody id="chars-tbody"></tbody>
       </table>
     </div>
@@ -238,8 +536,12 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   <!-- 二、深度还原剧本 -->
   <section id="sec-script" class="section-card">
     <div class="section-head">
-      <h2>📜 二、《深度还原剧本》</h2>
-      <button class="btn" onclick="copyScript(this)">📋 复制整集剧本</button>
+      <div class="section-title">
+        <span class="section-num">02</span>
+        <h2>深度还原剧本</h2>
+      </div>
+      <button class="btn" type="button" onclick="copyScript(this)">📋 复制整集剧本</button>
+      <div class="section-desc">场号 · 日夜内外 · 人物站位 · △ 动作与神态调度 · 对白与 OS/VO 分色标注。</div>
     </div>
     <div id="script-container"></div>
   </section>
@@ -247,18 +549,31 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   <!-- 三、骨架分析卡 -->
   <section id="sec-skeleton" class="section-card">
     <div class="section-head">
-      <h2>🧩 三、《骨架分析卡》</h2>
+      <div class="section-title">
+        <span class="section-num">03</span>
+        <h2>骨架分析卡</h2>
+      </div>
+      <div class="section-desc">结构公式 · 集粒度节拍表 · 钩子与 OS 信息差盘点 · 可迁移与不可迁移。</div>
     </div>
     <div class="formula-box" id="skeleton-formula"></div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>集/段</th><th>钩子（秒位+手段）</th><th>冲突升级</th><th>反转/爽点（含OS）</th><th>断章钩</th><th>强度</th></tr></thead>
+        <thead>
+          <tr>
+            <th>集 / 段</th>
+            <th>钩子（秒位 + 手段）</th>
+            <th>冲突升级</th>
+            <th>反转 / 爽点（含 OS）</th>
+            <th>断章钩</th>
+            <th>强度</th>
+          </tr>
+        </thead>
         <tbody id="beats-tbody"></tbody>
       </table>
     </div>
     <div class="grid-2">
       <div class="sub-box">
-        <h3>🎣 钩子与画外音（OS/VO）盘点</h3>
+        <h3>🎣 钩子与画外音（OS / VO）盘点</h3>
         <div id="hooks-list"></div>
       </div>
       <div class="sub-box">
@@ -271,34 +586,64 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   <!-- 四、逐句绑定逐字稿 -->
   <section id="sec-transcript" class="section-card">
     <div class="section-head">
-      <h2>📝 四、《L1+L2 逐句 1:1 画面绑定逐字稿》</h2>
+      <div class="section-title">
+        <span class="section-num">04</span>
+        <h2>L1+L2 逐句 1:1 画面绑定逐字稿</h2>
+      </div>
+      <span class="badge" id="transcript-count"></span>
+      <div class="section-desc">每句台词按时间码中点绑定该秒画面帧，张嘴 = 现场对白，闭嘴 = OS / 画外。</div>
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>句号</th><th>时间码</th><th>台词（正字校对后）</th><th>唯一说话人 &amp; 属性</th><th>该秒画面实录与嘴型核验</th></tr></thead>
+        <thead>
+          <tr>
+            <th>句号</th>
+            <th>时间码</th>
+            <th>台词（正字校对后）</th>
+            <th>唯一说话人 &amp; 属性</th>
+            <th>该秒画面实录与嘴型核验</th>
+          </tr>
+        </thead>
         <tbody id="transcript-tbody"></tbody>
       </table>
     </div>
   </section>
+
 </div>
+
+<button class="fab-top" id="fab-top" type="button" title="回到顶部" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+<div class="toast" id="toast"></div>
 
 <script>
 const DATA = __JSON_DATA__;
 
+/* ---------- 工具 ---------- */
 function esc(s) {
   if (s === null || s === undefined) return '';
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => t.classList.remove('show'), 1800);
 }
 
 function copyText(text, btn) {
   const done = () => {
-    const old = btn.innerHTML;
-    btn.classList.add('copied');
-    btn.innerHTML = '✅ 已复制';
-    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = old; }, 1400);
+    if (btn) {
+      const old = btn.innerHTML;
+      btn.classList.add('copied');
+      btn.innerHTML = '✅ 已复制';
+      setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = old; }, 1400);
+    }
+    showToast('已复制到剪贴板');
   };
   const fallback = () => {
-    // V4.0.1：clipboard API 在 file:// / 非安全上下文 / 部分浏览器会被拒，退回 execCommand
+    // clipboard API 在 file:// / 非安全上下文 / 部分浏览器会被拒，退回 execCommand
     try {
       const ta = document.createElement('textarea');
       ta.value = text;
@@ -311,7 +656,7 @@ function copyText(text, btn) {
       document.body.removeChild(ta);
       if (ok) { done(); return; }
     } catch (e) {}
-    alert('当前浏览器阻止了自动复制：请手动全选下方剧本区内容复制。');
+    alert('当前浏览器阻止了自动复制：请手动全选剧本区内容复制。');
   };
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(done).catch(fallback);
@@ -325,43 +670,72 @@ function toggleTheme() {
   htmlEl.setAttribute('data-theme', htmlEl.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
 }
 
+/* ---------- 头部 ---------- */
 function initHeader() {
   const m = DATA.meta || {};
-  document.getElementById('drama-title').textContent = `${m.title || '未命名短剧'} · ${m.episode || 'EP01'} 剧本深度还原报告`;
+  const title = m.title || '未命名短剧';
+  const ep = m.episode || 'EP01';
+  document.getElementById('drama-title').textContent = title + ' · ' + ep;
+  document.getElementById('drama-subtitle').textContent = '剧本深度还原报告 · 逐字稿 / 还原剧本 / 骨架分析 / 画面绑定';
+
+  const scenes = DATA.script_scenes || [];
+  const chars = DATA.characters || [];
+  const trans = DATA.transcript || [];
+  document.title = title + ' · ' + ep + ' — 剧本深度还原报告';
+
   const pills = [];
-  if (m.channel) pills.push(`<span class="badge">${esc(m.channel)}</span>`);
-  if (m.duration) pills.push(`<span>⏱️ 总时长：<b>${esc(m.duration)}</b></span>`);
-  pills.push(`<span>🎭 场次数：<b>${(DATA.script_scenes || []).length}</b> 场</span>`);
-  pills.push(`<span>👤 锁定人物：<b>${(DATA.characters || []).length}</b> 人</span>`);
-  pills.push(`<span>💬 总句数：<b>${(DATA.transcript || []).length}</b> 句</span>`);
-  if (m.date) pills.push(`<span>📅 ${esc(m.date)}</span>`);
+  if (m.channel) pills.push('<span class="badge">' + esc(m.channel) + '</span>');
+  if (m.duration) pills.push('<span class="meta-chip">⏱️ 总时长 <b>' + esc(m.duration) + '</b></span>');
+  pills.push('<span class="meta-chip">🎭 场次 <b>' + scenes.length + '</b></span>');
+  pills.push('<span class="meta-chip">👤 人物 <b>' + chars.length + '</b></span>');
+  pills.push('<span class="meta-chip">💬 台词 <b>' + trans.length + '</b> 句</span>');
+  if (m.date) pills.push('<span class="meta-chip">📅 ' + esc(m.date) + '</span>');
   document.getElementById('drama-meta').innerHTML = pills.join('');
+
+  const cc = document.getElementById('chars-count');
+  if (cc) cc.textContent = '已锁定 ' + chars.length + ' 人';
+  const tc = document.getElementById('transcript-count');
+  if (tc) tc.textContent = '共 ' + trans.length + ' 句';
 }
 
+/* ---------- CSV ---------- */
 function exportCSV() {
   const headers = ['句号', '时间码', '台词', '唯一说话人及属性', '画面实录与嘴型核验'];
-  const rows = (DATA.transcript || []).map(t => [
-    t.index, t.timecode, t.text, t.speaker, t.frame_note
-  ].map(v => '"' + String(v || '').replace(/"/g, '""') + '"').join(','));
+  const rows = (DATA.transcript || []).map(t => [t.index, t.timecode, t.text, t.speaker, t.frame_note]
+    .map(v => '"' + String(v || '').replace(/"/g, '""') + '"').join(','));
   const csv = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${(DATA.meta && DATA.meta.title) || 'script_teardown'}_transcript.csv`;
+  a.download = ((DATA.meta && DATA.meta.title) || 'script_teardown') + '_transcript.csv';
   a.click();
   URL.revokeObjectURL(url);
+  showToast('CSV 已导出');
 }
 
+/* ---------- 剧本 ---------- */
 function renderScript() {
   const scenes = DATA.script_scenes || [];
-  document.getElementById('script-container').innerHTML = scenes.map(sc => {
+  const box = document.getElementById('script-container');
+  if (!scenes.length) {
+    box.innerHTML = '<p style="color:var(--text-muted);">暂无剧本内容。</p>';
+    return;
+  }
+  box.innerHTML = scenes.map((sc, i) => {
     const blocks = (sc.blocks || []).map(b => {
-      if (b.type === 'action') return `<div class="action-line">△ ${esc(b.text)}</div>`;
-      const isOS = (b.speaker || '').includes('OS') || (b.speaker || '').includes('VO');
-      return `<div class="dialogue-line"><span class="speaker ${isOS ? 'os' : ''}">${esc(b.speaker)}</span>${b.direction ? `<span class="stage-dir">（${esc(b.direction)}）</span>` : ''}：${esc(b.text)}</div>`;
+      if (b.type === 'action') {
+        return '<div class="action-line"><span class="mark">△</span><span>' + esc(b.text) + '</span></div>';
+      }
+      const spk = b.speaker || '';
+      const isOS = spk.indexOf('OS') >= 0 || spk.indexOf('VO') >= 0 || spk.indexOf('画外') >= 0;
+      const tag = isOS ? '<span class="os-tag">OS</span>' : '';
+      const dir = b.direction ? '<span class="stage-dir">（' + esc(b.direction) + '）</span>' : '';
+      return '<div class="dialogue-line"><span class="speaker' + (isOS ? ' os' : '') + '">' +
+        esc(spk) + '</span>' + tag + dir + '：<span class="dialogue-text">' + esc(b.text) + '</span></div>';
     }).join('');
-    return `<div class="scene-block"><div class="scene-title">${esc(sc.header)}</div>${blocks}</div>`;
+    return '<div class="scene-block"><div class="scene-title"><span class="scene-tag">SCENE ' +
+      String(i + 1).padStart(2, '0') + '</span><span>' + esc(sc.header) + '</span></div>' + blocks + '</div>';
   }).join('');
 }
 
@@ -370,62 +744,106 @@ function copyScript(btn) {
     const lines = [sc.header];
     (sc.blocks || []).forEach(b => {
       if (b.type === 'action') lines.push('△ ' + b.text);
-      else lines.push(`${b.speaker}${b.direction ? '（' + b.direction + '）' : ''}：${b.text}`);
+      else lines.push((b.speaker || '') + (b.direction ? '（' + b.direction + '）' : '') + '：' + b.text);
     });
     return lines.join('\n');
   }).join('\n\n');
+  if (!txt.trim()) { showToast('暂无可复制的剧本内容'); return; }
   copyText(txt, btn);
 }
 
+/* ---------- 骨架 ---------- */
 function renderSkeleton() {
   const sk = DATA.skeleton || {};
   document.getElementById('skeleton-formula').textContent = sk.formula || '暂无结构公式';
-  document.getElementById('beats-tbody').innerHTML = (sk.beats || []).map(b => `
-    <tr>
-      <td><b>${esc(b.unit)}</b></td>
-      <td>${esc(b.hook)}</td>
-      <td>${esc(b.escalation)}</td>
-      <td>${esc(b.twist)}</td>
-      <td>${esc(b.cliffhanger)}</td>
-      <td>${esc(b.intensity)}</td>
-    </tr>
-  `).join('');
-  document.getElementById('hooks-list').innerHTML = (sk.hooks || []).map(h => `
-    <p><b>${esc(h.type)}</b>：${esc(h.method)}<br/><span style="color:var(--text-muted); font-size:12.5px;">原样证据：${esc(h.evidence)}</span></p>
-  `).join('') || '<p style="color:var(--text-muted);">暂无</p>';
-  document.getElementById('transfer-list').innerHTML = `
-    <p><span class="badge ok">可迁移骨架</span></p>
-    <ul>${(sk.transferable || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
-    <p><span class="badge warn">不可迁移表达</span></p>
-    <ul>${(sk.non_transferable || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
-  `;
+
+  const beats = sk.beats || [];
+  const tb = document.getElementById('beats-tbody');
+  tb.innerHTML = beats.length ? beats.map((b, i) => (
+    '<tr><td class="cell-name">' + esc(b.unit) + '</td>' +
+    '<td>' + esc(b.hook) + '</td>' +
+    '<td>' + esc(b.escalation) + '</td>' +
+    '<td>' + esc(b.twist) + '</td>' +
+    '<td>' + esc(b.cliffhanger) + '</td>' +
+    '<td><span class="badge">' + esc(b.intensity) + '</span></td></tr>'
+  )).join('') : '<tr><td colspan="6" style="color:var(--text-muted);">暂无节拍数据</td></tr>';
+
+  const hooks = sk.hooks || [];
+  document.getElementById('hooks-list').innerHTML = hooks.length ? hooks.map(h => (
+    '<div class="hook-item"><b>' + esc(h.type) + '</b>：' + esc(h.method) +
+    '<span class="ev">原样证据：' + esc(h.evidence) + '</span></div>'
+  )).join('') : '<p style="color:var(--text-muted);">暂无</p>';
+
+  const tr = sk.transferable || [];
+  const nt = sk.non_transferable || [];
+  document.getElementById('transfer-list').innerHTML =
+    '<p><span class="badge ok">可迁移骨架</span></p>' +
+    '<ul>' + tr.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' +
+    '<p><span class="badge warn">不可迁移表达</span></p>' +
+    '<ul>' + nt.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>';
+}
+
+/* ---------- 人物 + 逐字稿 ---------- */
+function initialOf(name) {
+  const clean = String(name || '?').replace(/[（(].*?[)）]/g, '').trim();
+  return clean ? clean.charAt(0) : '?';
 }
 
 function renderCharactersAndTranscript() {
-  document.getElementById('chars-tbody').innerHTML = (DATA.characters || []).map(c => `
-    <tr>
-      <td><b>${esc(c.name)}</b></td>
-      <td>${esc(c.appearance)}</td>
-      <td>${esc(c.variants)}</td>
-      <td>${esc(c.evidence)}</td>
-      <td>${esc(c.voice)}</td>
-    </tr>
-  `).join('');
-  document.getElementById('transcript-tbody').innerHTML = (DATA.transcript || []).map(t => `
-    <tr>
-      <td>${esc(t.index)}</td>
-      <td class="timecode">${esc(t.timecode)}</td>
-      <td>${esc(t.text)}</td>
-      <td><b>${esc(t.speaker)}</b></td>
-      <td>${esc(t.frame_note)}</td>
-    </tr>
-  `).join('');
+  const chars = DATA.characters || [];
+  document.getElementById('chars-tbody').innerHTML = chars.length ? chars.map(c => (
+    '<tr>' +
+    '<td><div class="person"><span class="avatar">' + esc(initialOf(c.name)) + '</span>' +
+    '<span class="cell-name">' + esc(c.name) + '</span></div></td>' +
+    '<td>' + esc(c.appearance) + '</td>' +
+    '<td>' + esc(c.variants) + '</td>' +
+    '<td>' + esc(c.evidence) + '</td>' +
+    '<td>' + esc(c.voice) + '</td></tr>'
+  )).join('') : '<tr><td colspan="5" style="color:var(--text-muted);">暂无人物档案</td></tr>';
+
+  const trans = DATA.transcript || [];
+  document.getElementById('transcript-tbody').innerHTML = trans.length ? trans.map(t => {
+    const spk = t.speaker || '';
+    const isOS = spk.indexOf('OS') >= 0 || spk.indexOf('VO') >= 0 || spk.indexOf('画外') >= 0;
+    const tag = isOS ? '<span class="os-tag">OS</span>' : '';
+    return '<tr>' +
+      '<td class="idx">' + esc(t.index) + '</td>' +
+      '<td class="timecode">' + esc(t.timecode) + '</td>' +
+      '<td>' + esc(t.text) + '</td>' +
+      '<td><b class="' + (isOS ? 'os-speaker' : '') + '">' + esc(spk) + '</b>' + tag + '</td>' +
+      '<td class="frame-note">' + esc(t.frame_note) + '</td></tr>';
+  }).join('') : '<tr><td colspan="5" style="color:var(--text-muted);">暂无逐句数据</td></tr>';
+}
+
+/* ---------- 交互：滚动进度 / 目录高亮 / 回顶 ---------- */
+function initScrollUI() {
+  const bar = document.getElementById('nav-progress-bar');
+  const fab = document.getElementById('fab-top');
+  const links = Array.prototype.slice.call(document.querySelectorAll('.toc-link'));
+  const sections = links.map(l => document.getElementById(l.getAttribute('data-target'))).filter(Boolean);
+
+  function onScroll() {
+    const doc = document.documentElement;
+    const max = doc.scrollHeight - doc.clientHeight;
+    const pct = max > 0 ? (doc.scrollTop / max) * 100 : 0;
+    if (bar) bar.style.width = pct.toFixed(2) + '%';
+    if (fab) fab.classList.toggle('show', doc.scrollTop > 420);
+
+    let current = null;
+    const probe = window.scrollY + 140;
+    sections.forEach(sec => { if (sec.offsetTop <= probe) current = sec.id; });
+    links.forEach(l => l.classList.toggle('active', l.getAttribute('data-target') === current));
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  onScroll();
 }
 
 initHeader();
 renderScript();
 renderSkeleton();
 renderCharactersAndTranscript();
+initScrollUI();
 </script>
 </body>
 </html>
